@@ -1,0 +1,52 @@
+# clean-clone walkthrough of the README, macOS 26.0.1 arm64, uv 0.8.9 (Homebrew 2025-08-12), 2026-11-20T07:26:15Z
+$ gh repo clone thisjody/judge-kit && cd judge-kit
+HEAD 710d2b01ed1b3012fb1a7f0ab11154d71865c202
+
+$ uv run pytest -q
+........................................................................ [ 69%]
+................................................................         [100%]
+exit 0
+
+
+$ uv run judge-kit demo
+exit 0
+15/15 README claims found in the demo output
+
+# file workflow, with key.json / judge.json / judged.json made from the synthetic example
+$ uv run judge-kit seal   --dir vault --labels key.json
+sealed generation 1: tune 72, held-out 48, manifest 759ffced2915c7b6bcc219a061c9b8522aa29c04c11c59f0cd344348c8969f78
+exit 0
+$ uv run judge-kit tune   --dir vault --config judge.json --note "tightened the scope wording"
+tune round 1 recorded
+exit 0
+$ uv run judge-kit freeze --dir vault --config judge.json
+frozen: config 043030d7300b29f082bd4c4c4b436ece7bbd8d7da294ecd21c6beb715ecd0827
+exit 0
+$ uv run judge-kit open   --dir vault --config judge.json --judged judged.json
+items scored: 48  (tp 20, fp 0, fn 0, tn 28)
+false-alarm rate: 0.000 [0.000, 0.121] (0/28)
+miss rate:        0.000 [0.000, 0.161] (0/20)
+precision:        1.000 [0.839, 1.000] (20/20)
+recall:           1.000 [0.839, 1.000] (20/20)
+kappa:            1.000 [1.000, 1.000] (bootstrap 95%)
+intervals are 95%: Wilson for rates, percentile bootstrap for kappa; agreement is with the consensus key, not with truth
+exit 0
+$ uv run judge-kit verify --dir vault
+consistent
+exit 0
+$ echo "{}" > empty.json; uv run judge-kit open ... --judged empty.json (a second vault, frozen)
+refused: the judge made no call on 48 held-out items (e.g. ['c00000', 'c00001', 'c00002']); judge every item before open
+exit 2
+{"n": 1, "state": "frozen", "manifest_hash": "759ffced2915c7b6bcc219a061c9b8522aa29c04c11c59f0cd344348c8969f78", "config_hash": "043030d7300b29f082bd4c4c4b436ece7bbd8d7da294ecd21c6beb715ecd0827", "tune_rounds": 0, "max_tune_rounds": 3}
+
+# the Python sketch, with SimulatedGrader in place of ClaudeCodeGrader (no model calls) and the example items
+consensus key (not ground truth): 53/60 items unanimous (88%); 18 flagged, 35 clean; 7 split, 0 errored; graders: g0, g1, g2
+sealed generation 1
+exit 0
+
+$ uv tool install (from the local clone, as git+https needs the repo public)
+consistent
+exit 0
+
+$ uv run pytest -p no:cacheprovider -o addopts='' -q   (the count, which -q -q hides)
+208 passed in 7.79s

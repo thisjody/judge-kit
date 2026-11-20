@@ -58,7 +58,7 @@ Python 3.10 or later and [uv](https://docs.astral.sh/uv/). From a clone, prefix 
 `uv run`, as below. To get a `judge-kit` command on your path instead:
 `uv tool install git+https://github.com/thisjody/judge-kit`.
 
-The tests: `uv run pytest -q` (about a minute; it includes the chaos and property tests).
+The tests: `uv run pytest -q` (208 tests, under ten seconds on a laptop, chaos and property tests included).
 
 ## Run the demo
 

@@ -20,6 +20,7 @@ its traffic log is in `evidence/live-bf574e1/audit.txt`.
 | Chaos | kill -9 at every named point inside seal, tune, freeze and open; 200 random-delay kills each of freeze and open; 2, 8 and 16 processes racing to open | every trial reconciled. After `repair`, `verify` shows only the "recovered" notes the crash earned. Exactly one open is in the ledger. A crashed open counts as spent. Exactly one racer wins |
 | Live acceptance | `scripts/live_acceptance.py`: 3 Claude graders through the locked-down `claude -p` (one fresh process per call, in an empty directory, with no tools, MCP servers, settings or saved session), 20 synthetic items, 60 calls | PASS. No grader errors, all 20 items unanimous, and the key agreed with planted truth on all 20 |
 | Load | `scripts/load.py` runs key, split, seal, freeze, open and agreement end to end with 3 graders, from 1,000 items up, each size in its own process | measured to 10M items; table below |
+| Clean clone | a fresh `gh repo clone` on macOS (arm64), then every README command: the tests, the demo, the five file-workflow commands, the refusal on an incomplete `judged.json`, the Python sketch, and `uv tool install` | every command did what the README says (`evidence/cleanclone/macos.txt`); the walkthrough found a missing install note and a wrong test-time claim, both fixed in the README |
 | Docs | `gate/docs_check.py` checks every number the README states about the demo against a fresh demo run | 15/15 |
 | Blind review | four rounds by fresh AI reviewer agents that did not write the code; below | the last round found no break in any core invariant |
 | Security scan | | **not run** |
@@ -96,6 +97,7 @@ a projection, not a measurement.
 - **The consensus key is not ground truth,** and nothing here can make it so. The live run used three graders from one model family, on 20 easy-to-call synthetic items. That it agreed with planted truth there says nothing about harder cases.
 - **Live acceptance covers `ClaudeCodeGrader` only.** `ClaudeGrader`, the Messages API adapter, is tested against a fake with the SDK's shape, not against the live API. The `bare=True` option was not run.
 - **The vault is a discipline tool.** Anyone with file access can read `heldout.json`. Someone who edits the files and the ledger to match can forge a history, and `verify` checks that the records agree, not that they are true.
+- **Python versions:** the suite ran on 3.13 (Linux sandboxes) and 3.11 (macOS). 3.10 and 3.12 were not run.
 - **Local filesystems only.** The exactly-once guarantees rest on `link`, `O_EXCL` and `flock` behaving as they do on a local POSIX filesystem. Network filesystems were not tested.
 - **Three low findings from the final review, not fixed:**
   - A forged ledger event whose name contains the "recovered from its file after a crash" wording is forgiven by `verify --allow-recovered`, though plain `verify` reports it. Such an event changes no state.

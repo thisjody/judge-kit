@@ -1,0 +1,5 @@
+Python 3.13.5
+6
+               total        used        free      shared  buff/cache   available
+Mem:           20025        3063        6682         353       10910       16961
+Swap:              0           0           0

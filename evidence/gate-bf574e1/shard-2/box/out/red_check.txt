@@ -1,0 +1,33 @@
+red: consensus by majority, not unanimity
+red: open without a freeze
+red: open with a config that was not frozen
+red: a set can be opened twice (both once-guards removed)
+red: SPENT not derived from the open marker (a crashed open would not spend the set)
+red: no tuning cap
+red: tuning allowed after the freeze
+red: held-out ids reused in a replacement set
+red: freeze is not exactly-once (link replaced by rename)
+red: verify ignores a forged freeze
+red: a grader reply with a non-boolean flag is accepted
+red: verify ignores a FREEZE.json that differs from the ledger's freeze
+red: deleting FREEZE.json goes unnoticed
+red: held-out labels not covered by a hash
+red: deleted tune rounds are not counted
+red: a torn ledger tail swallows the next event
+red: a grader exception aborts the key build
+red: graders share one mutable payload
+red: the claude -p grader runs with tools and project settings
+red: open on an incomplete judged file spends the set
+red: repair does not log a tune round a crash left unlogged
+red: verify stays silent about steps rebuilt from files
+red: verify ignores a generation whose files were deleted
+red: seal goes ahead after a generation's files were deleted
+red: open and freeze accept an older-format set
+red: verify accepts events the vault never writes
+red: --allow-recovered passes a lost ledger
+red: the grader prompt leaks the item id
+red: false alarms counted as hits
+red: Wilson interval uses the normal approximation
+red: tune and held-out sets overlap
+restored tree: green
+31/31 planted defects turned the suite red

@@ -1,0 +1,6 @@
+box sbx_tjyh7encbn0wjhrh
+requests 149, blocked 0
+v1/messages 128, 200s 66
+mcp-proxy or mcp_servers 0
+allowed: {'api.anthropic.com': 141, 'git.discobox.internal': 5, 'downloads.claude.ai': 2, 'raw.githubusercontent.com': 1}
+blocked: {}

@@ -1,0 +1,11 @@
+consensus key (not ground truth): 20/20 items unanimous (100%); 16 flagged, 4 clean; 0 split, 0 errored; graders: claude-0, claude-1, claude-2
+key labels wrong vs planted truth: 0 []
+items scored: 20  (tp 16, fp 0, fn 0, tn 4)
+false-alarm rate: 0.000 [0.000, 0.490] (0/4)
+miss rate:        0.000 [0.000, 0.194] (0/16)
+precision:        1.000 [0.806, 1.000] (16/16)
+recall:           1.000 [0.806, 1.000] (16/16)
+kappa:            1.000 [1.000, 1.000] (bootstrap 95%)
+intervals are 95%: Wilson for rates, percentile bootstrap for kappa; agreement is with the consensus key, not with truth
+grader calls: 60, errors: 0, seconds: 223.6
+LIVE ACCEPTANCE PASS

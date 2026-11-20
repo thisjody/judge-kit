@@ -1,0 +1,39 @@
+{
+ "sha": "bf574e197072acb855cbf5a5926ea17c2d78d5ec",
+ "verdict": "FAIL",
+ "fails": [
+  "run"
+ ],
+ "shards": [
+  {
+   "shard": 0,
+   "rc": "0",
+   "timeout": false
+  },
+  {
+   "shard": 1,
+   "rc": "0",
+   "timeout": false
+  },
+  {
+   "shard": 2,
+   "rc": "0",
+   "timeout": false
+  },
+  {
+   "shard": 3,
+   "rc": "0",
+   "timeout": false
+  },
+  {
+   "shard": 4,
+   "rc": null,
+   "timeout": false
+  },
+  {
+   "shard": 5,
+   "rc": "0",
+   "timeout": false
+  }
+ ]
+}

@@ -1,0 +1,9 @@
+{"n": 1000, "graders": 3, "generate_s": 0.026, "key_s": 0.088, "vault_s": 0.009, "agreement_s": 0.088, "total_s": 0.212, "s_per_1k": 0.2117, "peak_rss_mb": 22.0, "kappa": 0.9929, "coverage": 0.743}
+{"n": 3000, "graders": 3, "generate_s": 0.031, "key_s": 0.088, "vault_s": 0.009, "agreement_s": 0.096, "total_s": 0.224, "s_per_1k": 0.0748, "peak_rss_mb": 24.0, "kappa": 0.9952, "coverage": 0.742}
+{"n": 10000, "graders": 3, "generate_s": 0.082, "key_s": 0.309, "vault_s": 0.024, "agreement_s": 0.366, "total_s": 0.781, "s_per_1k": 0.0781, "peak_rss_mb": 32.3, "kappa": 0.9951, "coverage": 0.7563}
+{"n": 30000, "graders": 3, "generate_s": 0.294, "key_s": 1.0, "vault_s": 0.08, "agreement_s": 1.212, "total_s": 2.586, "s_per_1k": 0.0862, "peak_rss_mb": 56.9, "kappa": 0.9911, "coverage": 0.7533}
+{"n": 100000, "graders": 3, "generate_s": 1.035, "key_s": 3.733, "vault_s": 0.295, "agreement_s": 5.134, "total_s": 10.197, "s_per_1k": 0.102, "peak_rss_mb": 138.8, "kappa": 0.992, "coverage": 0.7507}
+{"n": 300000, "graders": 3, "generate_s": 6.227, "key_s": 14.948, "vault_s": 1.295, "agreement_s": 18.397, "total_s": 40.867, "s_per_1k": 0.1362, "peak_rss_mb": 358.5, "kappa": 0.9928, "coverage": 0.7501}
+{"n": 1000000, "graders": 3, "generate_s": 12.644, "key_s": 58.015, "vault_s": 6.963, "agreement_s": 81.594, "total_s": 159.216, "s_per_1k": 0.1592, "peak_rss_mb": 1152.2, "kappa": 0.9921, "coverage": 0.751}
+{"n": 3000000, "graders": 3, "generate_s": 45.313, "key_s": 185.124, "vault_s": 26.6, "agreement_s": 228.608, "total_s": 485.645, "s_per_1k": 0.1619, "peak_rss_mb": 3466.1, "kappa": 0.9925, "coverage": 0.7515}
+{"n": 10000000, "graders": 3, "generate_s": 128.794, "key_s": 421.993, "vault_s": 75.376, "agreement_s": 622.033, "total_s": 1248.195, "s_per_1k": 0.1248, "peak_rss_mb": 11042.3, "kappa": 0.9925, "coverage": 0.7513}

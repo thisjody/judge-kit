@@ -1,6 +1,0 @@
-box sbx_hzbg46trkcrsm417
-requests 887, blocked 0
-v1/messages 130, 200s 68
-mcp-proxy or mcp_servers 0
-allowed: {'deb.debian.org': 283, 'api.anthropic.com': 203, 'cache.nixos.org': 187, 'install.determinate.systems': 101, 'registry.npmjs.org': 32, 'assets.discobox.internal': 30, 'github.com': 8, 'cli.github.com': 7, 'deb.nodesource.com': 7, 'download.docker.com': 5, 'git.discobox.internal': 5, 'release-assets.githubusercontent.com': 4, 'api.flakehub.com': 2, 'downloads.claude.ai': 2, 'go.dev': 2, 'bun.sh': 1, 'flake-archives.flakehub.com': 1, 'flakehub.com': 1, 'dl.google.com': 1, 'pkg-containers.githubusercontent.com': 1, 'ghcr.io': 1, 'raw.githubusercontent.com': 1, 'static.rust-lang.org': 1, 'sh.rustup.rs': 1}
-blocked: {}

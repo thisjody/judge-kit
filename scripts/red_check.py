@@ -55,6 +55,12 @@ DEFECTS = [
         ("src/judge_kit/graders.py", "    LOCKDOWN = [\"--tools\", \"\", \"--strict-mcp-config\", \"--setting-sources\", \"\", \"--no-session-persistence\"]", "    LOCKDOWN = []")]),
     ("open on an incomplete judged file spends the set", [
         ("src/judge_kit/cli.py", "            if uncalled:  # refuse BEFORE opening", "            if False:  # refuse BEFORE opening")]),
+    ("repair does not log a tune round a crash left unlogged", [
+        ("src/judge_kit/vault.py", "                    if r not in logged_rounds:", "                    if False:")]),
+    ("verify stays silent about steps rebuilt from files", [
+        ("src/judge_kit/vault.py", "            if e.get(\"recovered\"):", "            if False:")]),
+    ("verify ignores a generation whose files were deleted", [
+        ("src/judge_kit/vault.py", "        for n in sorted(self._ledger_gens() - set(self._gens())):", "        for n in []:")]),
     ("the grader prompt leaks the item id", [
         ("src/judge_kit/graders.py", "f\"POLICY:\\n{rubric}\\n\\nTOOL CALL:\\n{json.dumps(dict(item.payload), sort_keys=True)}",
          "f\"POLICY:\\n{rubric}\\n\\nTOOL CALL {item.id}:\\n{json.dumps(dict(item.payload), sort_keys=True)}")]),

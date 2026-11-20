@@ -114,7 +114,7 @@ The built-in LLM graders send the model the rubric and the payload, never the it
 grader's call. `ClaudeCodeGrader` runs each call as a fresh `claude -p` process in a new empty
 directory, with no tools, no MCP servers, no settings files and no saved session. Claude Code may
 still load your user-level memory file (`~/.claude/CLAUDE.md`); `bare=True` skips that too, but it
-needs an API-key login. Your own graders receive `item.id` (the simulated graders use it), so
+needs an API-key login. Organization-managed Claude Code settings still apply. Your own graders receive `item.id` (the simulated graders use it), so
 keeping them blind is up to you.
 
 ## What the vault guarantees, and what it doesn't
@@ -135,8 +135,12 @@ held-out item.
 
 `verify` recomputes the hashes of the held-out set (ids and labels), the tune set and the frozen
 config, and checks each against the ledger. It reports any place where they disagree, such as an
-edited label, a swapped config or a deleted file. `repair` logs steps a crash left unlogged and
-acknowledges torn ledger lines. It never creates or removes a step's file.
+edited label, a swapped config, a deleted file or a deleted generation.
+
+After a crash, `repair` logs any step whose file landed but whose ledger line didn't, and
+acknowledges torn ledger lines. It never creates or removes a step's file. A step rebuilt this way
+can only be taken from its file, so `verify` lists it as recovered from then on, and `judge-kit
+verify` exits 1. A clean `verify` means every step was checked against an independent record.
 
 It is a discipline tool, not a lock against its owner. Anyone can `cat` the held-out file, and
 someone who edits the files and the ledger consistently can forge a history. What the vault does is

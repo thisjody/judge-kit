@@ -124,7 +124,7 @@ def test_crash_after_open_marker_spends_and_repairs(tmp_path):
     assert v.current().state == SPENT
     assert any("open unlogged" in p for p in v.verify())
     assert v.repair() == ["gen 1: logged open"]
-    assert v.verify() == []
+    assert v.verify() == ["gen 1: open recovered from its file after a crash; it could not be checked against the ledger"]
     with pytest.raises(VaultError, match="spent"):
         v.open(CFG)
 

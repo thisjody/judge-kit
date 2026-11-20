@@ -42,8 +42,12 @@ def _kill_after(target, root, delay):
 
 def _check(root):
     v = Vault(root)
-    v.repair()
-    assert v.verify() == [], v.verify()
+    fixed = v.repair()
+    probs = v.verify()
+    recovered = [p for p in probs if "recovered from its file after a crash" in p]
+    assert [p for p in probs if p not in recovered] == [], probs
+    # a note for exactly each step repair ever had to recover, and nothing else
+    assert len(recovered) == sum(1 for e in v.events() if e.get("recovered")), (fixed, probs)
     assert not list((v.root / "gen-001").glob(".*.tmp"))
     return v.current().state
 
@@ -160,4 +164,18 @@ def test_seal_crash_windows(tmp_path, point):
     assert committed == (point in ("after-link:heldout.json", "seal-before-log"))
     if not committed:
         assert v.seal(split(LABELS, 0.4, 1), LABELS) == 1  # a torn seal is simply redone
-    assert v.verify() == [] and v.current().state == SEALED
+    assert [p for p in v.verify() if "recovered from its file" not in p] == [] and v.current().state == SEALED
+
+
+def _tune1(root):
+    Vault(root).record_tune(CFG)
+
+
+@pytest.mark.parametrize("point", ["before-link:tune-1.json", "after-link:tune-1.json"])
+def test_tune_crash_windows(tmp_path, point):
+    Vault(tmp_path).seal(split(LABELS, 0.4, 1), LABELS)
+    assert _in_child(_tune1, str(tmp_path), point) == -signal.SIGKILL
+    _check(tmp_path)
+    assert Vault(tmp_path).current().tune_rounds == (0 if point.startswith("before") else 1)
+    Vault(tmp_path).record_tune(CFG)  # tuning carries on
+    _check(tmp_path)

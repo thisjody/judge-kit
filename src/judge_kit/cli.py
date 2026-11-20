@@ -39,6 +39,8 @@ def _load(p: str) -> dict:
         raise InputError(f"{p}: no such file") from None
     except json.JSONDecodeError as e:
         raise InputError(f"{p}: not valid JSON ({e.msg}, line {e.lineno})") from None
+    except OSError as e:
+        raise InputError(f"{p}: cannot read ({e.strerror})") from None
     if not isinstance(obj, dict):
         raise InputError(f"{p}: expected a JSON object")
     return obj

@@ -99,11 +99,13 @@ class Vault:
         With create=False a missing directory is an error rather than a new, empty vault."""
         self.root = Path(root)
         self.max_tune_rounds = max_tune_rounds
+        self.ledger = self.root / "ledger.jsonl"
         if create:
             self.root.mkdir(parents=True, exist_ok=True)
         elif not self.root.is_dir():
             raise VaultError(f"no vault at {self.root}")
-        self.ledger = self.root / "ledger.jsonl"
+        elif not self.ledger.exists() and not self._gens():
+            raise VaultError(f"{self.root} is not a vault (no ledger, no sealed generations)")
 
     # -- internals -------------------------------------------------------------------------
 
@@ -114,7 +116,7 @@ class Vault:
         out = []
         for p in self.root.iterdir():
             m = _GEN_RE.match(p.name)
-            if m and (p / "heldout.json").exists():
+            if m and p.name == f"gen-{int(m.group(1)):03d}" and (p / "heldout.json").exists():
                 out.append(int(m.group(1)))
         return sorted(out)
 
@@ -172,6 +174,14 @@ class Vault:
         cap = int(held.get("max_tune_rounds", self.max_tune_rounds))
         return Generation(n=n, state=state, manifest_hash=held["manifest_hash"], config_hash=ch, tune_rounds=rounds, max_tune_rounds=cap)
 
+    def _ledger_gens(self) -> set[int]:
+        return {e["gen"] for e in self.events() if e.get("event") == "seal" and isinstance(e.get("gen"), int)}
+
+    def _require_format(self, n: int) -> None:
+        held = self._read_json(self._gen_dir(n) / "heldout.json")
+        if "content_hash" not in held or "max_tune_rounds" not in held:
+            raise VaultError(f"generation {n} was sealed by an older version of judge-kit; seal a fresh set")
+
     def current(self) -> Generation:
         gens = self._gens()
         if not gens:
@@ -189,9 +199,15 @@ class Vault:
             raise VaultError("tune and held-out sets overlap")
         if not sp.heldout:
             raise VaultError("held-out set is empty")
+        bad = [i for i in (*sp.heldout, *sp.tune) if not isinstance(labels[i], bool)]
+        if bad:
+            raise VaultError(f"labels must be true/false, e.g. {bad[:3]}")
         fd = self._lock()
         try:
             gens = self._gens()
+            lost = sorted(self._ledger_gens() - set(gens))
+            if lost:
+                raise VaultError(f"generation(s) {lost} are in the ledger but their files are missing; run verify")
             if gens and self.generation(gens[-1]).state != SPENT:
                 raise VaultError(f"generation {gens[-1]} is not spent yet; open it before sealing a replacement")
             used = set()
@@ -236,6 +252,7 @@ class Vault:
         fd = self._lock()
         try:
             g = self.current()
+            self._require_format(g.n)
             if g.state != SEALED:
                 raise VaultError(f"generation {g.n} is {g.state}: tuning is closed; seal a fresh held-out set to retune")
             if g.tune_rounds >= g.max_tune_rounds:
@@ -255,6 +272,7 @@ class Vault:
         fd = self._lock()
         try:
             g = self.current()
+            self._require_format(g.n)
             if g.state != SEALED:
                 raise VaultError(f"generation {g.n} is already {g.state}")
             ch = config_hash(config)
@@ -280,6 +298,7 @@ class Vault:
                 raise VaultError(f"generation {g.n} is not frozen: freeze the judge before opening")
             if g.state == SPENT:
                 raise VaultError(f"generation {g.n} was already opened; the set is spent. Seal a fresh one")
+            self._require_format(g.n)
             d = self._gen_dir(g.n)
             if not (d / "FREEZE.json").exists():
                 raise VaultError(f"generation {g.n}: the ledger says frozen but FREEZE.json is missing; run verify")
@@ -343,6 +362,12 @@ class Vault:
                     self._log("seal", n, recovered=True, manifest_hash=h["manifest_hash"], content_hash=h.get("content_hash"),
                               tune_hash=t.get("content_hash"), max_tune_rounds=h.get("max_tune_rounds"))
                     fixed.append(f"gen {n}: logged seal")
+                logged_rounds = {e.get("round") for e in ev if e.get("gen") == n and e.get("event") == "tune"}
+                for r in self._tune_files(n):
+                    if r not in logged_rounds:
+                        cfg = self._read_json(d / f"tune-{r}.json").get("config", {})
+                        self._log("tune", n, round=r, config_hash=config_hash(cfg), recovered=True)
+                        fixed.append(f"gen {n}: logged tune round {r}")
                 if (d / "FREEZE.json").exists() and ("freeze", n) not in logged:
                     self._log("freeze", n, recovered=True, config_hash=self._read_json(d / "FREEZE.json")["config_hash"])
                     fixed.append(f"gen {n}: logged freeze")
@@ -374,11 +399,19 @@ class Vault:
         acked = sum(e.get("torn_lines", 0) for e in ev if e.get("event") == "repair")
         if torn > acked:
             problems.append(f"ledger has {torn - acked} torn line(s); run repair to acknowledge them")
+        for n in sorted(self._ledger_gens() - set(self._gens())):
+            problems.append(f"gen {n}: in the ledger but its files are missing")
+        for e in ev:
+            if e.get("recovered"):
+                problems.append(f"gen {e.get('gen')}: {e.get('event')} recovered from its file after a crash; "
+                                "it could not be checked against the ledger")
         earlier: set[str] = set()
         for n in self._gens():
             d = self._gen_dir(n)
             seals, freezes, opens, tunes = (self._logged(n, k) for k in ("seal", "freeze", "open", "tune"))
             held = self._read_json(d / "heldout.json")
+            if "content_hash" not in held or "max_tune_rounds" not in held:
+                problems.append(f"gen {n}: sealed by an older version of judge-kit; its labels and cap are not hashed")
             if manifest_hash(held["ids"]) != held["manifest_hash"]:
                 problems.append(f"gen {n}: held-out ids do not match their manifest hash")
             if content_hash(held["labels"]) != held.get("content_hash") or sorted(held["labels"]) != sorted(held["ids"]):

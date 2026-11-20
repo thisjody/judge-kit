@@ -23,7 +23,7 @@ DEFECTS = [
         ("src/judge_kit/vault.py", "            if g.state == SPENT:", "            if False:"),
         ("src/judge_kit/vault.py", "mfd = os.open(d / \"OPENED\", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)", "mfd = os.open(d / \"OPENED\", os.O_WRONLY | os.O_CREAT, 0o644)")]),
     ("SPENT not derived from the open marker (a crashed open would not spend the set)", [
-        ("src/judge_kit/vault.py", "        if (d / \"OPENED\").exists() or self._logged(n, \"open\") or self._logged(n, \"retire\"):\n            state = SPENT", "        if self._logged(n, \"open\") or self._logged(n, \"retire\"):\n            state = SPENT")]),
+        ("src/judge_kit/vault.py", "        if (d / \"OPENED\").exists() or self._logged(n, \"open\"):\n            state = SPENT", "        if self._logged(n, \"open\"):\n            state = SPENT")]),
     ("no tuning cap", [
         ("src/judge_kit/vault.py", "            if g.tune_rounds >= g.max_tune_rounds:", "            if False:")]),
     ("tuning allowed after the freeze", [
@@ -65,6 +65,10 @@ DEFECTS = [
         ("src/judge_kit/vault.py", "            if lost:\n", "            if False:\n")]),
     ("open and freeze accept an older-format set", [
         ("src/judge_kit/vault.py", "        if \"content_hash\" not in held or \"max_tune_rounds\" not in held:\n            raise", "        if False:\n            raise")]),
+    ("verify accepts events the vault never writes", [
+        ("src/judge_kit/vault.py", "            if e.get(\"event\") not in known:", "            if False:")]),
+    ("--allow-recovered passes a lost ledger", [
+        ("src/judge_kit/cli.py", " or \": seal recovered\" in p]", "]")]),
     ("the grader prompt leaks the item id", [
         ("src/judge_kit/graders.py", "f\"POLICY:\\n{rubric}\\n\\nTOOL CALL:\\n{json.dumps(dict(item.payload), sort_keys=True)}",
          "f\"POLICY:\\n{rubric}\\n\\nTOOL CALL {item.id}:\\n{json.dumps(dict(item.payload), sort_keys=True)}")]),

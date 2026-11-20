@@ -163,7 +163,7 @@ class Vault:
     def generation(self, n: int) -> Generation:
         d = self._gen_dir(n)
         held = self._read_json(d / "heldout.json")
-        if (d / "OPENED").exists() or self._logged(n, "open") or self._logged(n, "retire"):
+        if (d / "OPENED").exists() or self._logged(n, "open"):
             state = SPENT
         elif (d / "FREEZE.json").exists() or self._logged(n, "freeze"):
             state = FROZEN
@@ -185,8 +185,8 @@ class Vault:
     def _require_format(self, n: int) -> None:
         held = self._read_json(self._gen_dir(n) / "heldout.json")
         if "content_hash" not in held or "max_tune_rounds" not in held:
-            raise VaultError(f"generation {n} was sealed by an older version of judge-kit; seal a fresh set "
-                             "(that retires this one, and its ids stay unusable for later held-out sets)")
+            raise VaultError(f"generation {n} was sealed by an older version of judge-kit, which this version can't "
+                             "use; start a new vault directory")
 
     def current(self) -> Generation:
         gens = self._gens()
@@ -216,11 +216,8 @@ class Vault:
                 raise VaultError(f"generation(s) {lost} are in the ledger but their files are missing; restore them from a "
                                  "backup (without them the vault can't check that a new held-out set reuses none of their ids)")
             if gens and self.generation(gens[-1]).state != SPENT:
-                last = self._read_json(self._gen_dir(gens[-1]) / "heldout.json")
-                if "content_hash" in last and "max_tune_rounds" in last:
-                    raise VaultError(f"generation {gens[-1]} is not spent yet; open it before sealing a replacement")
-                # an older-format set that was never opened can't be used, so it is retired; its ids stay used
-                self._log("retire", gens[-1], reason="sealed by an older version of judge-kit, never opened")
+                self._require_format(gens[-1])
+                raise VaultError(f"generation {gens[-1]} is not spent yet; open it before sealing a replacement")
             used = set()
             for g in gens:
                 used |= set(self._read_json(self._gen_dir(g) / "heldout.json")["ids"])
@@ -412,6 +409,10 @@ class Vault:
             problems.append(f"ledger has {torn - acked} torn line(s); run repair to acknowledge them")
         for n in sorted(self._ledger_gens() - set(self._gens())):
             problems.append(f"gen {n}: in the ledger but its files are missing")
+        known = {"seal", "tune", "freeze", "open", "repair", "torn-line"}
+        for e in ev:
+            if e.get("event") not in known:
+                problems.append(f"unknown ledger event {e.get('event')!r} (gen {e.get('gen')}); the vault never writes it")
         for e in ev:
             if e.get("recovered"):
                 problems.append(f"gen {e.get('gen')}: {e.get('event')} recovered from its file after a crash; "
@@ -421,7 +422,7 @@ class Vault:
             d = self._gen_dir(n)
             seals, freezes, opens, tunes = (self._logged(n, k) for k in ("seal", "freeze", "open", "tune"))
             held = self._read_json(d / "heldout.json")
-            if ("content_hash" not in held or "max_tune_rounds" not in held) and not self._logged(n, "retire"):
+            if "content_hash" not in held or "max_tune_rounds" not in held:
                 problems.append(f"gen {n}: sealed by an older version of judge-kit; its labels and cap are not hashed")
             if manifest_hash(held["ids"]) != held["manifest_hash"]:
                 problems.append(f"gen {n}: held-out ids do not match their manifest hash")

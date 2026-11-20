@@ -179,7 +179,7 @@ def main(argv=None) -> int:
         x.add_argument("--dir", required=True)
         if name == "verify":
             x.add_argument("--allow-recovered", action="store_true",
-                           help="exit 0 when the only notes are steps repair recovered after a crash (still printed)")
+                           help="exit 0 when the only notes are tune, freeze or open steps repair recovered after a crash (still printed)")
     a = p.parse_args(argv)
 
     try:
@@ -212,7 +212,8 @@ def main(argv=None) -> int:
         elif a.cmd == "verify":
             probs = v.verify()
             print("consistent" if not probs else "\n".join(probs))
-            hard = [p for p in probs if "recovered from its file after a crash" not in p]
+            # a recovered seal is what a deleted ledger looks like, so it never counts as an allowed note
+            hard = [p for p in probs if "recovered from its file after a crash" not in p or ": seal recovered" in p]
             return 0 if not (hard if a.allow_recovered else probs) else 1
         elif a.cmd == "repair":
             fixed = v.repair()

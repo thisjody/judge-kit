@@ -28,26 +28,28 @@ def old_format(root, frozen):
     return v
 
 
-# 1. an older-format generation that was never opened can be retired by sealing a fresh set
+# 1. (revised after the fourth review) an older-format vault is refused with a way out that needs no ledger
+#    trust: start a new vault directory. A forged "retire" line in the ledger has no effect.
 @pytest.mark.parametrize("frozen", [False, True])
-def test_old_format_generation_can_be_replaced(tmp_path, frozen):
+def test_old_format_vault_points_to_a_new_directory(tmp_path, frozen):
     v = old_format(tmp_path, frozen)
-    with pytest.raises(VaultError, match="older version"):
+    with pytest.raises(VaultError, match="new vault directory"):
         v.open(A) if frozen else v.record_tune(A)
-    g = v.seal(split(FRESH, 0.4, 2), FRESH)
-    assert g == 2 and v.generation(1).state == SPENT
-    assert any(e["event"] == "retire" and e["gen"] == 1 for e in v.events())
-    with pytest.raises(VaultError, match="earlier held-out set"):
-        v2 = {**FRESH, **{i: LABELS[i] for i in split(LABELS, 0.4, 1).heldout}}
-        v.freeze(A); v.open(A)
-        v.seal(split(v2, 0.9, 3), v2)  # the retired set's ids still count as used
+    with pytest.raises(VaultError, match="new vault directory"):
+        v.seal(split(FRESH, 0.4, 2), FRESH)
+    assert not any(e["event"] == "retire" for e in v.events())
 
 
-def test_current_format_generation_cannot_be_retired(tmp_path):
+def test_forged_retire_line_has_no_effect(tmp_path):
     v = Vault(tmp_path)
     v.seal(split(LABELS, 0.4, 1), LABELS)
+    v.freeze(A)
+    with open(v.ledger, "a") as f:
+        f.write('{"event": "retire", "gen": 1, "t": 0}\n')
+    assert v.current().state == "frozen"
     with pytest.raises(VaultError, match="not spent"):
         v.seal(split(FRESH, 0.4, 2), FRESH)
+    assert any("unknown ledger event" in p for p in v.verify())
 
 
 # 2. a lost generation: the refusal says what actually unblocks it
@@ -87,4 +89,14 @@ def test_verify_allow_recovered(tmp_path, capsys):
     assert main(["verify", "--dir", str(tmp_path)]) == 1
     assert main(["verify", "--dir", str(tmp_path), "--allow-recovered"]) == 0
     (tmp_path / "gen-001" / "FREEZE.json").unlink()
+    assert main(["verify", "--dir", str(tmp_path), "--allow-recovered"]) == 1
+
+
+def test_allow_recovered_never_passes_a_lost_ledger(tmp_path):
+    v = Vault(tmp_path)
+    v.seal(split(LABELS, 0.4, 1), LABELS)
+    v.freeze(A)
+    v.open(A)
+    v.ledger.unlink()
+    v.repair()
     assert main(["verify", "--dir", str(tmp_path), "--allow-recovered"]) == 1

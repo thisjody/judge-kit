@@ -140,7 +140,8 @@ edited label, a swapped config, a deleted file or a deleted generation.
 After a crash, `repair` logs any step whose file landed but whose ledger line didn't, and
 acknowledges torn ledger lines. It never creates or removes a step's file. A step rebuilt this way
 can only be taken from its file, so `verify` lists it as recovered from then on, and `judge-kit
-verify` exits 1 (`--allow-recovered` exits 0 when those notes are the only ones, for use in CI).
+verify` exits 1 (`--allow-recovered` exits 0 when those notes are the only ones, for use in CI, unless a seal
+had to be recovered, which is what a deleted ledger looks like).
 A clean `verify` means the files and the ledger agree. It can't catch someone who edits both to
 match, including by cutting ledger lines.
 

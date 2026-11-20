@@ -1,4 +1,4 @@
-box sbx_tjyh7encbn0wjhrh
+box sbx-REDACTED
 requests 149, blocked 0
 v1/messages 128, 200s 66
 mcp-proxy or mcp_servers 0

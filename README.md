@@ -10,8 +10,8 @@ the procedure I use for that, as runnable code:
    answers, label the cases. Only the cases where every grader agrees get a label.
 2. **Tune and held-out sets.** A seeded, stratified split. The held-out set is sealed by a hash of
    its ids before any tuning starts, and tuning is capped at a few rounds.
-3. **Freeze.** The judge's full config is written down, hashed and tied to that held-out set
-   before the set is opened.
+3. **Freeze.** The judge's full config is written down and hashed, together with the hashes of
+   that held-out set, before the set is opened.
 4. **Open once.** The held-out set opens one time, for the frozen config only. After that it is spent.
 5. **Replace a spent set.** Any further tuning needs a fresh held-out set, with no ids from an
    earlier one.

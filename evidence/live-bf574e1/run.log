@@ -1,0 +1,18 @@
+== preflight 06:47:04
+== preflight exit 0
+== clone 06:47:04
+-- base d06ddb4e0bed626d835abca99a760b96e86612a1
+== clone exit 0
+== box 06:47:05
+-- box sbx-REDACTED
+-- versions: harness claude-code revision 3 bundle sha256:cc1d0b32fccf1c60effc0e3c2ded102a0ee236a3ce8d01d1af0c02e6f0bed246 manifest sha256:1a4f68959641aceb07d38e35a6bf8a655586e28f8dc6471fa8fd0a146cc286f4;claude 2.1.329 (Claude Code);node v25.9.0;
+== box exit 0
+== setup 06:47:11
+== setup exit 0
+== agent 06:47:11
+-- agent unit job-agent in ~/scratch/jk-live-bf574e1/src
+== agent exit 0
+== export 06:51:23
+-- 2 patch files, 0 uncommitted paths
+== export exit 0
+== done 06:51:25

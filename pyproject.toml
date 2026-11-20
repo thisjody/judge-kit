@@ -1,0 +1,32 @@
+[project]
+name = "judge-kit"
+version = "0.1.0"
+description = "Prove an LLM judge before you trust it: a blind consensus key, a sealed held-out set, freeze, open once."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+claude = ["anthropic>=0.40"]
+
+[project.scripts]
+judge-kit = "judge_kit.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "hypothesis>=6.100", "mutmut>=3.2"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/judge_kit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.mutmut]
+paths_to_mutate = ["src/judge_kit/consensus.py", "src/judge_kit/splits.py", "src/judge_kit/vault.py", "src/judge_kit/agreement.py"]
+tests_dir = ["tests"]

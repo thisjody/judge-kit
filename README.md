@@ -52,6 +52,14 @@ have, not ground truth:
 The kit does not make a judge right. It tells you how wrong it is, on cases it never saw, with an
 honest interval.
 
+## Install
+
+Python 3.10 or later and [uv](https://docs.astral.sh/uv/). From a clone, prefix commands with
+`uv run`, as below. To get a `judge-kit` command on your path instead:
+`uv tool install git+https://github.com/thisjody/judge-kit`.
+
+The tests: `uv run pytest -q` (about a minute; it includes the chaos and property tests).
+
 ## Run the demo
 
 Offline, no API key, about a second:
@@ -81,18 +89,21 @@ The steps are the same for an LLM judge, whose config is its model, prompt and s
 ## Use it on your own judge
 
 ```
-judge-kit seal   --dir vault --labels key.json            # {"id": true|false} from your graders
-judge-kit tune   --dir vault --config judge.json --note "tightened the scope wording"
-judge-kit freeze --dir vault --config judge.json
-judge-kit open   --dir vault --config judge.json --judged judged.json
-judge-kit verify --dir vault
+uv run judge-kit seal   --dir vault --labels key.json     # {"id": true|false} from your graders
+uv run judge-kit tune   --dir vault --config judge.json --note "tightened the scope wording"
+uv run judge-kit freeze --dir vault --config judge.json
+uv run judge-kit open   --dir vault --config judge.json --judged judged.json
+uv run judge-kit verify --dir vault
 ```
+
+`judged.json` holds the frozen judge's call on every item, in the same form as `key.json`. `open`
+refuses, without spending the set, if any held-out item is missing from it.
 
 `judge.json` is any JSON object that fully describes the judge. For an LLM judge that's the model
 id, the full prompt text and the sampling settings. `open` refuses unless that object hashes to the
 frozen one.
 
-Or from Python:
+Or from Python (a sketch: `items` is a list of `Item(id, payload)` and `rubric` is your rubric text):
 
 ```python
 from judge_kit import build_key, split, Vault, agreement

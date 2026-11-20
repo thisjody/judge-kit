@@ -7,10 +7,11 @@ reported, because "the key covers 82% of the data" is part of the result.
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
 from typing import Iterable, Mapping, Sequence
 
-from judge_kit.graders import Grader, GraderError, Item, shuffled
+from judge_kit.graders import Grader, Item, shuffled
 
 
 @dataclass
@@ -66,7 +67,12 @@ def key_from_votes(votes: Mapping[str, Mapping[str, bool | None]], graders: Sequ
 
 
 def build_key(items: Iterable[Item], graders: Sequence[Grader], rubric: str, seed: int = 0) -> Key:
-    """Run each grader alone over the items, in its own shuffled order, then keep the unanimous ones."""
+    """Run each grader alone over the items, in its own shuffled order, then keep the unanimous ones.
+
+    Each grader gets its own deep copy of each payload. Any exception from a grader (a timeout, an API
+    error, an unparseable reply) is recorded as an errored vote for that item; KeyboardInterrupt and
+    SystemExit still stop the run.
+    """
     items = list(items)
     ids = [i.id for i in items]
     if len(set(ids)) != len(ids):
@@ -77,8 +83,9 @@ def build_key(items: Iterable[Item], graders: Sequence[Grader], rubric: str, see
     votes: dict[str, dict[str, bool | None]] = {i: {} for i in ids}
     for n, g in enumerate(graders):
         for item in shuffled(items, seed + n):
+            own = Item(id=item.id, payload=copy.deepcopy(item.payload))  # no grader can change what the next one sees
             try:
-                votes[item.id][g.name] = g.grade(item, rubric)
-            except GraderError:
+                votes[item.id][g.name] = g.grade(own, rubric)
+            except Exception:  # a timeout or an API error is an errored vote, not a lost run
                 votes[item.id][g.name] = None
     return key_from_votes(votes, names)

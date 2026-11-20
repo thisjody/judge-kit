@@ -1,0 +1,31 @@
+== 1. key: 400 synthetic tool calls, 3 isolated graders, unanimous cells only
+   consensus key (not ground truth): 303/400 items unanimous (76%); 131 flagged, 172 clean; 97 split, 0 errored; graders: grader-a, grader-b, grader-c
+   synthetic data lets us check the key against planted truth: 3 unanimous labels are WRONG
+   (the graders share a blind spot); hard cases are 33% of the data but 22% of the key
+   -> consensus is not truth. Report coverage and what was dropped with every result.
+== 2. split: seeded, stratified; seal the held-out set
+   generation 1: tune 182, held-out 121 (manifest 838f9ed7b6c4)
+== 3. tune on the tune set only (cap: 3 rounds)
+   baseline: kappa 0.852, false alarms 0, misses 13
+   round 1: resolve .. in paths; match hosts by suffix: kappa 0.932, false alarms 0, misses 6
+   round 2: exact host or dot-subdomain; catch |sh with no space: kappa 0.966, false alarms 0, misses 3
+   round 3: recursive rm anywhere outside /workspace; check argument types: kappa 0.989, false alarms 1, misses 0
+   a 4th round is refused: tuning cap reached (3 rounds); freeze the best config
+== 4. freeze the chosen judge BEFORE opening the held-out set
+   frozen config 043030d7300b against held-out manifest 838f9ed7b6c4
+== 5. open once
+   items scored: 121  (tp 52, fp 2, fn 0, tn 67)
+   false-alarm rate: 0.029 [0.008, 0.100] (2/69)
+   miss rate:        0.000 [0.000, 0.069] (0/52)
+   precision:        0.963 [0.875, 0.990] (52/54)
+   recall:           1.000 [0.931, 1.000] (52/52)
+   kappa:            0.966 [0.915, 1.000] (bootstrap 95%)
+   intervals are 95%: Wilson for rates, percentile bootstrap for kappa; agreement is with the consensus key, not with truth
+   (synthetic only) against planted truth: false alarms 0, misses 0
+   the gap between those two lines is the key's error, not the judge's
+   a second open is refused: generation 1 was already opened; the set is spent. Seal a fresh one
+   retuning is refused: generation 1 is spent: tuning is closed; seal a fresh held-out set to retune
+== 6. a spent set is replaced, never reused
+   generation 2 sealed from fresh items; generation 1 stays spent
+== verify: consistent
+   vault: /tmp/jkdemo

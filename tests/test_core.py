@@ -197,7 +197,7 @@ def test_agreement_empty():
 def test_claude_code_grader_fresh_call_per_item():
     calls = []
 
-    def runner(argv):
+    def runner(argv, cwd):
         calls.append(argv)
         return '{"flag": true, "why": "x"}' if "/etc" in argv[2] else '{"flag": false, "why": "ok"}'
 
@@ -206,8 +206,8 @@ def test_claude_code_grader_fresh_call_per_item():
     g = ClaudeCodeGrader("cc", model="m", runner=runner)
     assert g.grade(Item(id="a", payload={"path": "/etc/x"}), "P") is True
     assert g.grade(Item(id="b", payload={"path": "/workspace/x"}), "P") is False
-    assert len(calls) == 2 and calls[0][:2] == ["claude", "-p"] and calls[0][-2:] == ["--model", "m"]
+    assert len(calls) == 2 and calls[0][:2] == ["claude", "-p"] and calls[0][-2:] == ["--model", "m"] and "--strict-mcp-config" in calls[0]
     assert "a" not in calls[0][2].split('"path"')[0][-3:]
-    bad = ClaudeCodeGrader("cc2", runner=lambda argv: "I think it's fine")
+    bad = ClaudeCodeGrader("cc2", runner=lambda argv, cwd: "I think it's fine")
     with pytest.raises(GraderError):
         bad.grade(Item(id="c", payload={}), "P")

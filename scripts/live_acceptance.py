@@ -15,7 +15,7 @@ import time
 from judge_kit.agreement import agreement
 from judge_kit.consensus import build_key
 from judge_kit.example import RUBRIC, TUNE_ROUNDS, RuleJudge, generate
-from judge_kit.graders import ClaudeCodeGrader, GraderError, _prompt, parse_flag
+from judge_kit.graders import ClaudeCodeGrader, GraderError, parse_flag
 
 
 class Recording(ClaudeCodeGrader):
@@ -24,12 +24,13 @@ class Recording(ClaudeCodeGrader):
         self.raw = []
 
     def grade(self, item, rubric):
-        argv = ["claude", "-p", _prompt(item, rubric)]
-        if self.model:
-            argv += ["--model", self.model]
+        import tempfile
+
+        argv = self.argv(item, rubric)  # the same locked-down argv the shipped grader uses
         t = time.time()
         try:
-            out = self._run(argv)
+            with tempfile.TemporaryDirectory(prefix="judge-kit-grader-") as cwd:
+                out = self._run(argv, cwd)
         except Exception as e:  # recorded, then surfaced as a grader error
             self.raw.append({"id": item.id, "error": repr(e)[:300]})
             raise GraderError(str(e)) from e

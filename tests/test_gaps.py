@@ -142,7 +142,7 @@ def fake_claude(tmp_path, monkeypatch):
     bin_.mkdir()
     exe = bin_ / "claude"
     exe.write_text("#!/bin/sh\n" + 'case "$*" in *FAILME*) echo boom >&2; exit 3;; *SLOW*) sleep 5;; esac\n'
-                   + 'printf \'%s\\n\' "$@" > "$(dirname "$0")/argv.txt"\necho \'{"flag": false, "why": "ok"}\'\n')
+                   + 'printf \'%s\\n\' "$@" > "$(dirname "$0")/argv.txt"\npwd > "$(dirname "$0")/cwd.txt"\necho \'{"flag": false, "why": "ok"}\'\n')
     exe.chmod(exe.stat().st_mode | stat.S_IEXEC)
     monkeypatch.setenv("PATH", f"{bin_}{os.pathsep}{os.environ['PATH']}")
     return bin_
@@ -154,6 +154,8 @@ def test_claude_code_grader_real_subprocess(fake_claude):
     assert g.grade(Item("i", {"x": "ok"}), "RUBRIC-TEXT") is False
     argv = (fake_claude / "argv.txt").read_text()
     assert argv.startswith("-p\n") and "RUBRIC-TEXT" in argv and argv.rstrip().endswith("--model\nm1")
+    assert "--strict-mcp-config" in argv and "--no-session-persistence" in argv
+    assert (fake_claude / "cwd.txt").read_text().strip() != os.getcwd()
     with pytest.raises(GraderError, match="exited 3.*boom"):
         g.grade(Item("i", {"x": "FAILME"}), "r")
     import subprocess
@@ -304,7 +306,7 @@ def test_open_checks_manifest(tmp_path):
     body = json.loads(p.read_text())
     body["ids"] = body["ids"][:-1]
     p.write_text(json.dumps(body))
-    with pytest.raises(VaultError, match="does not match its manifest hash"):
+    with pytest.raises(VaultError, match="does not match its hashes"):
         v.open(CFG)
 
 
@@ -347,7 +349,7 @@ def test_verify_every_problem(tmp_path):
     (d / "OPENED").write_text("{}")
     fz = json.loads((d / "FREEZE.json").read_text())
     (d / "FREEZE.json").unlink()
-    assert "gen 1: opened without a freeze" in _problems(v)
+    assert "the ledger says frozen but there is no FREEZE.json" in _problems(v)
     fz["manifest_hash"] = "0" * 64
     (d / "FREEZE.json").write_text(json.dumps(fz))
     assert "freeze names a different held-out set" in _problems(v)

@@ -12,7 +12,7 @@ case "$SHARD_INDEX" in
      mutmut results > "$OUT/mutmut_results.txt" 2>&1
      for m in $(mutmut results 2>/dev/null | awk -F: '/survived/{print $1}'); do echo "=== $m"; mutmut show "$m"; done > "$OUT/survivors.txt" 2>&1
      tr '\r' '\n' < "$OUT/mutmut_run.txt" | grep -E '🎉|🫥|⏰|🤔|🙁|🔇' | tail -1 > "$OUT/mutmut_tally.txt"; exit $r ;;
-  4) python scripts/load.py --max 10000000 --budget-s 2400 > "$OUT/load.jsonl" 2>&1 ;;
+  4) python scripts/load.py --max 40000000 --budget-s 5400 > "$OUT/load.jsonl" 2>&1 ;;
   5) python -m judge_kit.cli demo --dir /tmp/jkdemo > "$OUT/demo.txt" 2>&1 && python gate/docs_check.py "$OUT/demo.txt" > "$OUT/docs_check.txt" 2>&1 ;;
   *) exit 0 ;;
 esac

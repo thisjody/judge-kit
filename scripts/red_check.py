@@ -18,14 +18,14 @@ DEFECTS = [
         ("src/judge_kit/vault.py", "            if g.state == SEALED:\n                raise VaultError(f\"generation {g.n} is not frozen",
          "            if False:\n                raise VaultError(f\"generation {g.n} is not frozen")]),
     ("open with a config that was not frozen", [
-        ("src/judge_kit/vault.py", "            if ch != g.config_hash:", "            if False:")]),
+        ("src/judge_kit/vault.py", "            if ch != g.config_hash or any(h is not None and h != ch for h in logged):", "            if False:")]),
     ("a set can be opened twice (both once-guards removed)", [
         ("src/judge_kit/vault.py", "            if g.state == SPENT:", "            if False:"),
         ("src/judge_kit/vault.py", "mfd = os.open(d / \"OPENED\", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)", "mfd = os.open(d / \"OPENED\", os.O_WRONLY | os.O_CREAT, 0o644)")]),
     ("SPENT not derived from the open marker (a crashed open would not spend the set)", [
-        ("src/judge_kit/vault.py", "        if (d / \"OPENED\").exists():\n            state = SPENT", "        if False:\n            state = SPENT")]),
+        ("src/judge_kit/vault.py", "        if (d / \"OPENED\").exists() or self._logged(n, \"open\"):\n            state = SPENT", "        if self._logged(n, \"open\"):\n            state = SPENT")]),
     ("no tuning cap", [
-        ("src/judge_kit/vault.py", "            if g.tune_rounds >= self.max_tune_rounds:", "            if False:")]),
+        ("src/judge_kit/vault.py", "            if g.tune_rounds >= g.max_tune_rounds:", "            if False:")]),
     ("tuning allowed after the freeze", [
         ("src/judge_kit/vault.py", "            if g.state != SEALED:\n                raise VaultError(f\"generation {g.n} is {g.state}: tuning",
          "            if False:\n                raise VaultError(f\"generation {g.n} is {g.state}: tuning")]),
@@ -37,6 +37,24 @@ DEFECTS = [
         ("src/judge_kit/vault.py", "                if config_hash(fr[\"config\"]) != fr[\"config_hash\"]:", "                if False:")]),
     ("a grader reply with a non-boolean flag is accepted", [
         ("src/judge_kit/graders.py", "    if not isinstance(flag, bool):", "    if flag is None:")]),
+    ("verify ignores a FREEZE.json that differs from the ledger's freeze", [
+        ("src/judge_kit/vault.py", "                elif freezes[0].get(\"config_hash\") != fr[\"config_hash\"]:", "                elif False:")]),
+    ("deleting FREEZE.json goes unnoticed", [
+        ("src/judge_kit/vault.py", "            elif freezes:\n                problems.append(f\"gen {n}: the ledger says frozen", "            elif False:\n                problems.append(f\"gen {n}: the ledger says frozen")]),
+    ("held-out labels not covered by a hash", [
+        ("src/judge_kit/vault.py", "            if content_hash(held[\"labels\"]) != held.get(\"content_hash\") or sorted(held[\"labels\"]) != sorted(held[\"ids\"]):", "            if False:")]),
+    ("deleted tune rounds are not counted", [
+        ("src/judge_kit/vault.py", "        rounds = max(max(files, default=0), len(files), len(self._logged(n, \"tune\")))", "        rounds = len(files)")]),
+    ("a torn ledger tail swallows the next event", [
+        ("src/judge_kit/vault.py", "                line = \"\\n\" + line  # a torn last line must not swallow this event", "                pass")]),
+    ("a grader exception aborts the key build", [
+        ("src/judge_kit/consensus.py", "            except Exception:  # a timeout or an API error is an errored vote, not a lost run", "            except ValueError:")]),
+    ("graders share one mutable payload", [
+        ("src/judge_kit/consensus.py", "payload=copy.deepcopy(item.payload))", "payload=item.payload)")]),
+    ("the claude -p grader runs with tools and project settings", [
+        ("src/judge_kit/graders.py", "    LOCKDOWN = [\"--tools\", \"\", \"--strict-mcp-config\", \"--setting-sources\", \"\", \"--no-session-persistence\"]", "    LOCKDOWN = []")]),
+    ("open on an incomplete judged file spends the set", [
+        ("src/judge_kit/cli.py", "            if uncalled:  # refuse BEFORE opening", "            if False:  # refuse BEFORE opening")]),
     ("the grader prompt leaks the item id", [
         ("src/judge_kit/graders.py", "f\"POLICY:\\n{rubric}\\n\\nTOOL CALL:\\n{json.dumps(dict(item.payload), sort_keys=True)}",
          "f\"POLICY:\\n{rubric}\\n\\nTOOL CALL {item.id}:\\n{json.dumps(dict(item.payload), sort_keys=True)}")]),

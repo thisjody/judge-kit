@@ -105,24 +105,42 @@ vault.seal(split(key.labels, heldout_frac=0.4, seed=1), key.labels)
 ...
 ```
 
-A grader is anything with a `name` and a `grade(item, rubric) -> bool`. It sees the item's payload
-and the rubric, and nothing else: no ids, no labels, no other grader's call.
+A grader is anything with a `name` and a `grade(item, rubric) -> bool`. Each grader gets its own
+copy of every payload, so no grader can change what the next one sees. An exception from a grader,
+such as a timeout or an API error, counts as an errored vote on that item, and the rest of the run
+goes on.
+
+The built-in LLM graders send the model the rubric and the payload, never the item id or any other
+grader's call. `ClaudeCodeGrader` runs each call as a fresh `claude -p` process in a new empty
+directory, with no tools, no MCP servers, no settings files and no saved session. Claude Code may
+still load your user-level memory file (`~/.claude/CLAUDE.md`); `bare=True` skips that too, but it
+needs an API-key login. Your own graders receive `item.id` (the simulated graders use it), so
+keeping them blind is up to you.
 
 ## What the vault guarantees, and what it doesn't
 
-The vault enforces the procedure through files that are each created atomically and exactly once,
-plus an append-only ledger that `verify` checks against them:
+Each step writes a file that is created atomically and exactly once, and appends a line to a
+ledger. A step counts as done if either record shows it, so deleting a file can't undo a freeze,
+an open or a tuning round. The vault enforces:
 
 - no held-out labels before a freeze;
 - one freeze per set;
-- one open per set, even with concurrent processes racing;
-- tuning only before the freeze, up to the cap;
+- one open per set, for the frozen config only, even with concurrent processes racing;
+- tuning only before the freeze, up to a cap that is fixed when the set is sealed;
 - no held-out id reused in a replacement set.
 
-A process killed part-way through an open still spends the set, because it may already have been read.
+A process killed part-way through an open still spends the set, because it may already have been
+read. The CLI's `open` refuses, without spending the set, if the judge hasn't made a call on every
+held-out item.
 
-It is a discipline tool, not a lock against its owner. Anyone can `cat` the held-out file. What the
-vault does is make the honest path the easy one and leave a record that shows when it wasn't taken.
+`verify` recomputes the hashes of the held-out set (ids and labels), the tune set and the frozen
+config, and checks each against the ledger. It reports any place where they disagree, such as an
+edited label, a swapped config or a deleted file. `repair` logs steps a crash left unlogged and
+acknowledges torn ledger lines. It never creates or removes a step's file.
+
+It is a discipline tool, not a lock against its owner. Anyone can `cat` the held-out file, and
+someone who edits the files and the ledger consistently can forge a history. What the vault does is
+make the honest path the easy one, and make a careless or partial edit show up.
 
 ## Verification
 

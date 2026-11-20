@@ -110,29 +110,44 @@ class ClaudeGrader:
 class ClaudeCodeGrader:
     """An LLM grader through the Claude Code CLI (`claude -p`), one fresh process per item.
 
-    A fresh process per call is isolation by construction: no grader carries context from another
-    item or another grader. `runner` is injectable for tests; it takes the argv list and returns stdout.
+    Each call runs in a new empty temporary directory with no tools, no MCP servers, no settings
+    files and no saved session, so the model sees the prompt (the rubric and the payload) and
+    nothing from the project or from another call. Claude Code may still load the user-level memory
+    file (~/.claude/CLAUDE.md); pass bare=True to skip that too, which needs an API-key login.
+    `runner` is injectable for tests; it takes (argv, cwd) and returns stdout.
     """
 
-    def __init__(self, name: str, model: str | None = None, runner: Callable[[list[str]], str] | None = None, timeout_s: int = 120):
+    LOCKDOWN = ["--tools", "", "--strict-mcp-config", "--setting-sources", "", "--no-session-persistence"]
+
+    def __init__(self, name: str, model: str | None = None, runner: Callable[[list[str], str], str] | None = None,
+                 timeout_s: int = 120, bare: bool = False):
         self.name = name
         self.model = model
         self.timeout_s = timeout_s
+        self.bare = bare
         self._run = runner or self._subprocess
 
-    def _subprocess(self, argv: list[str]) -> str:
+    def _subprocess(self, argv: list[str], cwd: str) -> str:
         import subprocess
 
-        r = subprocess.run(argv, capture_output=True, text=True, timeout=self.timeout_s)
+        r = subprocess.run(argv, capture_output=True, text=True, timeout=self.timeout_s, cwd=cwd)
         if r.returncode != 0:
             raise GraderError(f"claude exited {r.returncode}: {r.stderr[:200]!r}")
         return r.stdout
 
-    def grade(self, item: Item, rubric: str) -> bool:
-        argv = ["claude", "-p", _prompt(item, rubric)]
+    def argv(self, item: Item, rubric: str) -> list[str]:
+        a = ["claude", "-p", _prompt(item, rubric), *self.LOCKDOWN]
+        if self.bare:
+            a.append("--bare")
         if self.model:
-            argv += ["--model", self.model]
-        return parse_flag(self._run(argv))
+            a += ["--model", self.model]
+        return a
+
+    def grade(self, item: Item, rubric: str) -> bool:
+        import tempfile
+
+        with tempfile.TemporaryDirectory(prefix="judge-kit-grader-") as cwd:
+            return parse_flag(self._run(self.argv(item, rubric), cwd))
 
 
 class GraderError(ValueError):

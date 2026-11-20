@@ -28,10 +28,19 @@ from judge_kit.splits import split
 from judge_kit.vault import Vault, VaultError
 
 
+class InputError(ValueError):
+    pass
+
+
 def _load(p: str) -> dict:
-    obj = json.loads(Path(p).read_text())
+    try:
+        obj = json.loads(Path(p).read_text())
+    except FileNotFoundError:
+        raise InputError(f"{p}: no such file") from None
+    except json.JSONDecodeError as e:
+        raise InputError(f"{p}: not valid JSON ({e.msg}, line {e.lineno})") from None
     if not isinstance(obj, dict):
-        raise SystemExit(f"{p}: expected a JSON object")
+        raise InputError(f"{p}: expected a JSON object")
     return obj
 
 
@@ -39,7 +48,7 @@ def _bools(p: str) -> dict[str, bool]:
     obj = _load(p)
     bad = [k for k, v in obj.items() if not isinstance(v, bool)]
     if bad:
-        raise SystemExit(f"{p}: values must be true/false, e.g. {bad[:3]}")
+        raise InputError(f"{p}: values must be true/false, e.g. {bad[:3]}")
     return obj
 
 
@@ -170,7 +179,7 @@ def main(argv=None) -> int:
     try:
         if a.cmd == "demo":
             return cmd_demo(a)
-        v = Vault(a.dir)
+        v = Vault(a.dir, create=(a.cmd == "seal"))
         if a.cmd == "seal":
             labels = _bools(a.labels)
             sp = split(labels, a.heldout_frac, a.seed)
@@ -182,12 +191,15 @@ def main(argv=None) -> int:
             print(f"frozen: config {v.freeze(_load(a.config))}")
         elif a.cmd == "open":
             judged = _bools(a.judged)
-            held = v.open(_load(a.config))
+            cfg = _load(a.config)
+            uncalled = [i for i in v.heldout_ids() if i not in judged]
+            if uncalled:  # refuse BEFORE opening: an open with nothing to score would spend the set for nothing
+                raise VaultError(f"the judge made no call on {len(uncalled)} held-out items (e.g. {uncalled[:3]}); "
+                                 "judge every item before opening")
+            held = v.open(cfg)
             rep = agreement(judged, held)
             for line in rep.lines():
                 print(line)
-            if rep.missing:
-                print(f"WARNING: the judge made no call on {len(rep.missing)} held-out items; they are not counted")
         elif a.cmd == "status":
             g = v.current()
             print(json.dumps(g.__dict__))
@@ -198,7 +210,7 @@ def main(argv=None) -> int:
         elif a.cmd == "repair":
             fixed = v.repair()
             print("\n".join(fixed) if fixed else "nothing to repair")
-    except VaultError as e:
+    except (VaultError, InputError, ValueError) as e:
         print(f"refused: {e}", file=sys.stderr)
         return 2
     return 0

@@ -1,0 +1,3 @@
+harness claude-code revision 3 bundle sha256:cc1d0b32fccf1c60effc0e3c2ded102a0ee236a3ce8d01d1af0c02e6f0bed246 manifest sha256:1a4f68959641aceb07d38e35a6bf8a655586e28f8dc6471fa8fd0a146cc286f4
+claude 2.1.329 (Claude Code)
+node v25.9.0

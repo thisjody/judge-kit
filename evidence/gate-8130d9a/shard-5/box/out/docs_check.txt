@@ -1,0 +1,16 @@
+ok   key covers 76%
+ok   hard cases 33% of the data
+ok   22% of the key
+ok   three unanimous labels wrong
+ok   baseline kappa 0.85
+ok   round 3 kappa 0.99
+ok   fourth round refused
+ok   held-out kappa 0.966 [0.915, 1.000]
+ok   2 false alarms of 69
+ok   no errors vs planted truth
+ok   second open refused
+ok   retune refused
+ok   generation 2 sealed
+ok   400 items
+ok   verify consistent
+15/15 README claims found in the demo output

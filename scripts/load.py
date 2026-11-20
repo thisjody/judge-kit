@@ -2,7 +2,8 @@
 
 Prints a JSON line per size with wall seconds per stage, peak RSS and seconds per 1k items, then the
 knee: the first size where seconds-per-item grows by more than 1.5x over the previous size, or where
-the run fails (memory, time budget). Run: python scripts/load.py [--max N] [--budget-s S]
+the run fails (memory, time budget). Sizes under 100k are reported but not used to find the knee:
+their per-item time is timer noise. Run: python scripts/load.py [--max N] [--budget-s S]
 """
 
 import argparse
@@ -62,7 +63,7 @@ def main() -> int:
     if a.one:
         print(json.dumps(run(a.one, a.graders)), flush=True)
         return 0
-    sizes = [n for n in (1_000, 3_000, 10_000, 30_000, 100_000, 300_000, 1_000_000, 3_000_000, 10_000_000) if n <= a.max]
+    sizes = [n for n in (1_000, 3_000, 10_000, 30_000, 100_000, 300_000, 1_000_000, 3_000_000, 10_000_000, 20_000_000, 40_000_000) if n <= a.max]
     rows, knee, start = [], None, time.perf_counter()
     for n in sizes:
         if time.perf_counter() - start > a.budget_s:
@@ -82,7 +83,8 @@ def main() -> int:
             break
         r = json.loads(p.stdout.strip().splitlines()[-1])
         print(json.dumps(r), flush=True)
-        if rows and r["s_per_1k"] > 1.5 * rows[-1]["s_per_1k"] and knee is None:
+        # below 100k items a whole run takes well under a second, so its per-item time is timer noise
+        if rows and n >= 100_000 and r["s_per_1k"] > 1.5 * rows[-1]["s_per_1k"] and knee is None:
             knee = {"n": n, "why": f"seconds per 1k items rose {r['s_per_1k'] / rows[-1]['s_per_1k']:.2f}x over n={rows[-1]['n']}"}
         rows.append(r)
     if not rows:

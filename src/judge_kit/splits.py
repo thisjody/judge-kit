@@ -30,6 +30,9 @@ def manifest_hash(ids) -> str:
 def split(labels: Mapping[str, bool], heldout_frac: float, seed: int) -> Split:
     if not 0.0 < heldout_frac < 1.0:
         raise ValueError("heldout_frac must be between 0 and 1")
+    bad = [i for i, v in labels.items() if not isinstance(v, bool)]
+    if bad:
+        raise ValueError(f"labels must be true/false, e.g. {bad[:3]}")
     rng = random.Random(seed)
     tune: list[str] = []
     held: list[str] = []

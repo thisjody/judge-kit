@@ -101,7 +101,12 @@ class Vault:
         self.max_tune_rounds = max_tune_rounds
         self.ledger = self.root / "ledger.jsonl"
         if create:
-            self.root.mkdir(parents=True, exist_ok=True)
+            try:
+                self.root.mkdir(parents=True, exist_ok=True)
+            except OSError as e:
+                raise VaultError(f"cannot use {self.root} as a vault directory ({e.strerror})") from None
+            if not self.root.is_dir():
+                raise VaultError(f"{self.root} is not a directory")
         elif not self.root.is_dir():
             raise VaultError(f"no vault at {self.root}")
         elif not self.ledger.exists() and not self._gens():
@@ -151,14 +156,14 @@ class Vault:
         out = []
         for p in self._gen_dir(n).glob("tune-*.json"):
             m = re.match(r"^tune-(\d+)\.json$", p.name)
-            if m:
+            if m and p.name == f"tune-{int(m.group(1))}.json":
                 out.append(int(m.group(1)))
         return sorted(out)
 
     def generation(self, n: int) -> Generation:
         d = self._gen_dir(n)
         held = self._read_json(d / "heldout.json")
-        if (d / "OPENED").exists() or self._logged(n, "open"):
+        if (d / "OPENED").exists() or self._logged(n, "open") or self._logged(n, "retire"):
             state = SPENT
         elif (d / "FREEZE.json").exists() or self._logged(n, "freeze"):
             state = FROZEN
@@ -180,7 +185,8 @@ class Vault:
     def _require_format(self, n: int) -> None:
         held = self._read_json(self._gen_dir(n) / "heldout.json")
         if "content_hash" not in held or "max_tune_rounds" not in held:
-            raise VaultError(f"generation {n} was sealed by an older version of judge-kit; seal a fresh set")
+            raise VaultError(f"generation {n} was sealed by an older version of judge-kit; seal a fresh set "
+                             "(that retires this one, and its ids stay unusable for later held-out sets)")
 
     def current(self) -> Generation:
         gens = self._gens()
@@ -207,9 +213,14 @@ class Vault:
             gens = self._gens()
             lost = sorted(self._ledger_gens() - set(gens))
             if lost:
-                raise VaultError(f"generation(s) {lost} are in the ledger but their files are missing; run verify")
+                raise VaultError(f"generation(s) {lost} are in the ledger but their files are missing; restore them from a "
+                                 "backup (without them the vault can't check that a new held-out set reuses none of their ids)")
             if gens and self.generation(gens[-1]).state != SPENT:
-                raise VaultError(f"generation {gens[-1]} is not spent yet; open it before sealing a replacement")
+                last = self._read_json(self._gen_dir(gens[-1]) / "heldout.json")
+                if "content_hash" in last and "max_tune_rounds" in last:
+                    raise VaultError(f"generation {gens[-1]} is not spent yet; open it before sealing a replacement")
+                # an older-format set that was never opened can't be used, so it is retired; its ids stay used
+                self._log("retire", gens[-1], reason="sealed by an older version of judge-kit, never opened")
             used = set()
             for g in gens:
                 used |= set(self._read_json(self._gen_dir(g) / "heldout.json")["ids"])
@@ -410,7 +421,7 @@ class Vault:
             d = self._gen_dir(n)
             seals, freezes, opens, tunes = (self._logged(n, k) for k in ("seal", "freeze", "open", "tune"))
             held = self._read_json(d / "heldout.json")
-            if "content_hash" not in held or "max_tune_rounds" not in held:
+            if ("content_hash" not in held or "max_tune_rounds" not in held) and not self._logged(n, "retire"):
                 problems.append(f"gen {n}: sealed by an older version of judge-kit; its labels and cap are not hashed")
             if manifest_hash(held["ids"]) != held["manifest_hash"]:
                 problems.append(f"gen {n}: held-out ids do not match their manifest hash")

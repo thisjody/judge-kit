@@ -175,7 +175,11 @@ def main(argv=None) -> int:
     o.add_argument("--config", required=True)
     o.add_argument("--judged", required=True)
     for name in ("status", "verify", "repair"):
-        sub.add_parser(name).add_argument("--dir", required=True)
+        x = sub.add_parser(name)
+        x.add_argument("--dir", required=True)
+        if name == "verify":
+            x.add_argument("--allow-recovered", action="store_true",
+                           help="exit 0 when the only notes are steps repair recovered after a crash (still printed)")
     a = p.parse_args(argv)
 
     try:
@@ -208,7 +212,8 @@ def main(argv=None) -> int:
         elif a.cmd == "verify":
             probs = v.verify()
             print("consistent" if not probs else "\n".join(probs))
-            return 0 if not probs else 1
+            hard = [p for p in probs if "recovered from its file after a crash" not in p]
+            return 0 if not (hard if a.allow_recovered else probs) else 1
         elif a.cmd == "repair":
             fixed = v.repair()
             print("\n".join(fixed) if fixed else "nothing to repair")

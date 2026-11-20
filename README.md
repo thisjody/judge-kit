@@ -140,7 +140,12 @@ edited label, a swapped config, a deleted file or a deleted generation.
 After a crash, `repair` logs any step whose file landed but whose ledger line didn't, and
 acknowledges torn ledger lines. It never creates or removes a step's file. A step rebuilt this way
 can only be taken from its file, so `verify` lists it as recovered from then on, and `judge-kit
-verify` exits 1. A clean `verify` means every step was checked against an independent record.
+verify` exits 1 (`--allow-recovered` exits 0 when those notes are the only ones, for use in CI).
+A clean `verify` means the files and the ledger agree. It can't catch someone who edits both to
+match, including by cutting ledger lines.
+
+If a generation's files are deleted, `seal` refuses until they are restored, because without them
+the vault can't check that a new held-out set reuses none of their ids.
 
 It is a discipline tool, not a lock against its owner. Anyone can `cat` the held-out file, and
 someone who edits the files and the ledger consistently can forge a history. What the vault does is

@@ -52,7 +52,7 @@ def test_deleted_generation_is_caught(tmp_path):
     v.open(A)
     shutil.rmtree(tmp_path / "gen-001")
     assert any("gen 1" in p and "files are missing" in p for p in v.verify())
-    with pytest.raises(VaultError, match="run verify"):
+    with pytest.raises(VaultError, match="restore them"):
         v.seal(split(LABELS, 0.4, 1), LABELS)
 
 

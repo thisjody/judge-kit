@@ -27,6 +27,14 @@ def wilson(k: int, n: int, z: float = Z95) -> tuple[float, float]:
     return (max(0.0, centre - half), min(1.0, centre + half))
 
 
+def percentile(sorted_values: list[float], q: float) -> float:
+    """The q-quantile of an already sorted list by the nearest-rank-below rule (lo) or above (hi)."""
+    if not sorted_values:
+        raise ValueError("no values")
+    pos = q * (len(sorted_values) - 1)
+    return sorted_values[math.floor(pos) if q < 0.5 else math.ceil(pos)]
+
+
 def kappa(tp: int, fp: int, fn: int, tn: int) -> float:
     """Cohen's kappa between judge and key. 1.0 when both agree perfectly, even on a single class."""
     n = tp + fp + fn + tn
@@ -34,8 +42,8 @@ def kappa(tp: int, fp: int, fn: int, tn: int) -> float:
         return float("nan")
     po = (tp + tn) / n
     pe = ((tp + fp) * (tp + fn) + (fn + tn) * (fp + tn)) / (n * n)
-    if pe == 1.0:
-        return 1.0 if po == 1.0 else 0.0
+    if pe == 1.0:  # both sides put every item in the same single class, so they agree on all of them
+        return 1.0
     return (po - pe) / (1 - pe)
 
 
@@ -123,9 +131,7 @@ def agreement(judged: Mapping[str, bool], key: Mapping[str, bool], boot: int = 2
             if not math.isnan(v):
                 ks.append(v)
         ks.sort()
-        lo = ks[int(0.025 * (len(ks) - 1))]
-        hi = ks[int(math.ceil(0.975 * (len(ks) - 1)))]
-        ci = (lo, hi)
+        ci = (percentile(ks, 0.025), percentile(ks, 0.975))
     else:
         ci = (float("nan"), float("nan"))
     return Report(

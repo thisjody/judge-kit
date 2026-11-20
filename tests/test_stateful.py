@@ -116,5 +116,5 @@ class VaultMachine(RuleBasedStateMachine):
             assert g.n == self.gen and g.state == self.state and g.tune_rounds == self.tunes
 
 
-VaultMachine.TestCase.settings = settings(max_examples=300, stateful_step_count=30, deadline=None)
+VaultMachine.TestCase.settings = settings(max_examples=int(__import__("os").environ.get("JK_SM_EXAMPLES", "300")), stateful_step_count=30, deadline=None)
 TestVaultMachine = VaultMachine.TestCase

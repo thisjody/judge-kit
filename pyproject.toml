@@ -28,5 +28,6 @@ testpaths = ["tests"]
 addopts = "-q"
 
 [tool.mutmut]
-paths_to_mutate = ["src/judge_kit/consensus.py", "src/judge_kit/splits.py", "src/judge_kit/vault.py", "src/judge_kit/agreement.py"]
+paths_to_mutate = ["src/judge_kit/consensus.py", "src/judge_kit/splits.py", "src/judge_kit/vault.py", "src/judge_kit/agreement.py", "src/judge_kit/graders.py"]
 tests_dir = ["tests"]
+also_copy = ["src/judge_kit/__init__.py", "src/judge_kit/cli.py", "src/judge_kit/example", "scripts"]

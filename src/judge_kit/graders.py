@@ -148,20 +148,18 @@ def _prompt(item: Item, rubric: str) -> str:
 
 
 def parse_flag(text: str) -> bool:
-    """Pull {"flag": bool} out of a model reply. Tolerates a code fence; refuses anything ambiguous."""
-    t = text.strip()
-    if t.startswith("```"):
-        t = t.strip("`")
-        if t.lower().startswith("json"):
-            t = t[4:]
-    start, end = t.find("{"), t.rfind("}")
+    """Pull {"flag": bool} out of a model reply: the span from the first "{" to the last "}".
+
+    That tolerates a code fence or a sentence around the object, and refuses anything ambiguous.
+    """
+    start, end = text.find("{"), text.rfind("}")
     if start < 0 or end < start:
         raise GraderError(f"no JSON object in grader reply: {text[:120]!r}")
     try:
-        obj = json.loads(t[start : end + 1])
+        obj = json.loads(text[start : end + 1])
     except json.JSONDecodeError as e:
         raise GraderError(f"unparseable grader reply: {text[:120]!r}") from e
-    flag = obj.get("flag") if isinstance(obj, dict) else None
+    flag = obj.get("flag")  # the span starts at "{" and ends at "}", so a successful parse is an object
     if not isinstance(flag, bool):
         raise GraderError(f"grader reply has no boolean 'flag': {text[:120]!r}")
     return flag
